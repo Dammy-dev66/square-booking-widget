@@ -92,21 +92,28 @@
 
 <script>
 async function goToCheckout() {
-  const res = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      serviceName: "Signature Haircut",
-      amount: 30
-    }),
-  });
+    try {
+        const res = await fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                serviceName: bookingWidget.selectedService.name,
+                barberName: bookingWidget.selectedBarber.name,
+                price: bookingWidget.selectedBarber.price,
+                duration: bookingWidget.selectedService.duration
+            }),
+        });
 
-  const data = await res.json();
-  if (data.url) {
-    window.location.href = data.url; // redirect to Square checkout
-  } else {
-    alert("Error creating checkout link");
-  }
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url; // Redirect to Square checkout
+        } else {
+            alert("Error creating checkout link: " + (data.error || "Unknown error"));
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert("Failed to process checkout");
+    }
 }
 </script>
 
@@ -118,4 +125,5 @@ async function goToCheckout() {
 </body>
 
 </html>
+
 
