@@ -88,11 +88,33 @@
                 <h2>Booking Confirmed!</h2>
                 <div id="booking-summary"></div>
                 <p class="modal-note">You will be redirected to secure checkout to complete your booking.</p>
-                <button onclick="closeModal()" class="modal-btn">Continue to Checkout</button>
+                <button onclick="goToCheckout()">Continue to Checkout</button>
+
+<script>
+async function goToCheckout() {
+  const res = await fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      serviceName: "Signature Haircut",
+      amount: 30
+    }),
+  });
+
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url; // redirect to Square checkout
+  } else {
+    alert("Error creating checkout link");
+  }
+}
+</script>
+
             </div>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>
