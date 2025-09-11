@@ -392,7 +392,7 @@ function goBackToBarbers() {
     bookingWidget.showStep('step-barbers');
 }
 
-function closeModal() {
+function goToCheckout() {
     document.getElementById('success-modal').classList.add('hidden');
     
     // Call your checkout API
@@ -436,3 +436,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
