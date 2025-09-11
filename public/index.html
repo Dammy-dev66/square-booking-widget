@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Appointment - Premium Booking Experience</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="booking-container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="booking-header">
+            <div class="booking-header-content">
+                <h1>Book Your Perfect Cut</h1>
+                <p>Experience premium barbering in 3 simple steps</p>
+            </div>
+        </header>
+
+        <!-- Step 1: Service Selection -->
+        <div id="step-services" class="step active">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <h2>Choose Your Service</h2>
+                <p>Select from our premium grooming services</p>
+            </div>
+            <div id="services-grid" class="grid">
+                <!-- Services will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Step 2: Barber Selection -->
+        <div id="step-barbers" class="step hidden">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <h2>Select Your Master Barber</h2>
+                <p>Each barber brings unique expertise and style</p>
+            </div>
+            <button class="back-btn" onclick="goBack()">← Back to Services</button>
+            <div id="selected-service-info" class="selected-info"></div>
+            <div id="barbers-grid" class="grid">
+                <!-- Barbers will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Step 3: Time Selection -->
+        <div id="step-times" class="step hidden">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <h2>Choose Your Perfect Time</h2>
+                <p>Select from available appointment slots</p>
+            </div>
+            <button class="back-btn" onclick="goBackToBarbers()">← Back to Barbers</button>
+            <div id="selected-barber-info" class="selected-info"></div>
+            <div class="date-selector">
+                <h3>Select Date</h3>
+                <div id="date-options" class="date-grid">
+                    <!-- Date options will be loaded here -->
+                </div>
+            </div>
+            <div id="times-grid" class="grid">
+                <!-- Available times will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading hidden">
+            <div class="loading-spinner"></div>
+            <p>Preparing your booking experience...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error hidden">
+            <div class="error-icon">⚠️</div>
+            <h3>Booking Temporarily Unavailable</h3>
+            <p>We're experiencing technical difficulties. Please try our <a href="#" id="fallback-link">direct booking system</a> or call us directly.</p>
+            <button onclick="location.reload()" class="retry-btn">Try Again</button>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="success-icon">✓</div>
+                <h2>Booking Confirmed!</h2>
+                <div id="booking-summary"></div>
+                <p class="modal-note">You will be redirected to secure checkout to complete your booking.</p>
+                <button onclick="closeModal()" class="modal-btn">Continue to Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
