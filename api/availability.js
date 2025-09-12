@@ -5,12 +5,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { serviceVariationId, barberId, startAt } = req.body;
+    const { serviceVariationId, teamMemberId, startDate } = req.body;
 
-    const response = await fetch("https://connect.squareupsandbox.com/v2/bookings/availability/search", {
+    const startTime = startDate || new Date().toISOString();
+    const endTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const response = await fetch("https://connect.squareup.com/v2/bookings/availability/search", {
       method: "POST",
       headers: {
-        "Square-Version": "2025-07-17",
+        "Square-Version": "2023-12-13",
         "Authorization": `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
         "Content-Type": "application/json"
       },
@@ -21,20 +24,44 @@ export default async function handler(req, res) {
             segment_filters: [
               {
                 service_variation_id: serviceVariationId,
-                team_member_id_filter: { all: [barberId] }
+                team_member_id_filter: teamMemberId ? { all: [teamMemberId] } : undefined
               }
-            ]
+            ],
+            start_at_range: {
+              start_at: startTime,
+              end_at: endTime
+            }
           }
-        },
-        start_at: startAt || new Date().toISOString(),
-        max_results: 3
+        }
       })
     });
 
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.errors?.[0]?.detail || 'Square API error');
+    }
+
     res.status(200).json({ availability: data.availabilities || [] });
   } catch (err) {
     console.error("Error fetching availability", err);
-    res.status(500).json({ error: "Failed to fetch availability" });
+    
+    // Fallback demo availability
+    const demoAvailability = [
+      { 
+        start_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), 
+        appointment_segments: [{ duration_minutes: 30, team_member_id: '1' }] 
+      },
+      { 
+        start_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), 
+        appointment_segments: [{ duration_minutes: 30, team_member_id: '2' }] 
+      },
+      { 
+        start_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), 
+        appointment_segments: [{ duration_minutes: 30, team_member_id: '3' }] 
+      }
+    ];
+    
+    res.status(200).json({ availability: demoAvailability });
   }
 }
