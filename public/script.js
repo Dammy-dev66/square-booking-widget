@@ -3,22 +3,24 @@ class BookingWidget {
         this.selectedService = null;
         this.selectedBarber = null;
         this.selectedDate = null;
+        this.selectedTime = null;
         this.services = [];
         this.barbers = [];
+        this.availability = [];
         this.currentStep = 1;
         this.init();
     }
 
     async init() {
-    try {
-        // Always render demo services to avoid loading issues
-        this.renderServices();
-        this.updateProgress();
-    } catch (error) {
-        console.error('Init error:', error);
-        this.showError();
+        try {
+            await this.loadServices();
+            this.renderServices();
+            this.updateProgress();
+        } catch (error) {
+            console.error('Init error:', error);
+            this.showError();
+        }
     }
-}
 
     updateProgress() {
         const progressFill = document.getElementById('progress-fill');
@@ -39,7 +41,7 @@ class BookingWidget {
 
     async loadBarbers() {
         try {
-            const response = await fetch('/api/barbers');
+            const response = await fetch('/api/team-members');
             const data = await response.json();
             this.barbers = data.teamMembers;
         } catch (error) {
@@ -48,11 +50,27 @@ class BookingWidget {
         }
     }
 
+    async loadAvailability(serviceVariationId = null) {
+        try {
+            const response = await fetch('/api/availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    serviceVariationId: serviceVariationId || this.selectedService?.id
+                })
+            });
+            const data = await response.json();
+            this.availability = data.availability;
+        } catch (error) {
+            console.error('Failed to load availability:', error);
+            this.availability = [];
+        }
+    }
+
     renderServices() {
         const grid = document.getElementById('services-grid');
         grid.innerHTML = '';
 
-        // Use real API data if available, otherwise use enhanced demo data
         const servicesToRender = this.services && this.services.length > 0 
             ? this.processApiServices() 
             : this.getDemoServices();
@@ -87,6 +105,7 @@ class BookingWidget {
             
             return {
                 id: service.id,
+                variationId: service.item_data?.variations?.[0]?.id,
                 name: service.item_data?.name || 'Service',
                 basePrice: price,
                 duration: 30,
@@ -100,6 +119,7 @@ class BookingWidget {
         return [
             { 
                 id: '1', 
+                variationId: '1',
                 name: 'Signature Haircut', 
                 basePrice: 25, 
                 duration: 30,
@@ -108,6 +128,7 @@ class BookingWidget {
             },
             { 
                 id: '2', 
+                variationId: '2',
                 name: 'Kids Cut', 
                 basePrice: 20, 
                 duration: 25,
@@ -116,6 +137,7 @@ class BookingWidget {
             },
             { 
                 id: '3', 
+                variationId: '3',
                 name: 'Beard Trim', 
                 basePrice: 15, 
                 duration: 20,
@@ -124,6 +146,7 @@ class BookingWidget {
             },
             { 
                 id: '4', 
+                variationId: '4',
                 name: 'Haircut + Beard', 
                 basePrice: 35, 
                 duration: 45,
@@ -134,26 +157,23 @@ class BookingWidget {
     }
 
     async selectService(service, cardElement) {
-        // Remove selected class from all cards
         document.querySelectorAll('#services-grid .card').forEach(card => {
             card.classList.remove('selected');
         });
         
-        // Add selected class to clicked card
         cardElement.classList.add('selected');
-        
         this.selectedService = service;
         this.showLoading();
         
-        // Small delay for visual feedback
         setTimeout(async () => {
             try {
                 await this.loadBarbers();
+                await this.loadAvailability(service.variationId);
                 this.currentStep = 2;
                 this.updateProgress();
                 this.showStep('step-barbers');
                 this.renderServiceInfo();
-                this.renderBarbers();
+                this.renderBarbersWithAvailability();
             } catch (error) {
                 this.showError();
             }
@@ -169,17 +189,81 @@ class BookingWidget {
         `;
     }
 
-    renderBarbers() {
+    renderBarbersWithAvailability() {
         const grid = document.getElementById('barbers-grid');
         grid.innerHTML = '';
 
-        // Enhanced demo barbers
+        if (this.barbers && this.barbers.length > 0) {
+            this.barbers.forEach(barber => {
+                const barberAvailability = this.getBarberAvailability(barber.id);
+                const card = this.createBarberCard(barber, barberAvailability);
+                grid.appendChild(card);
+            });
+        } else {
+            this.renderDemoBarbers();
+        }
+    }
+
+    getBarberAvailability(barberId) {
+        return this.availability
+            .filter(slot => 
+                slot.appointment_segments?.some(segment => 
+                    segment.team_member_id === barberId
+                )
+            )
+            .slice(0, 3)
+            .map(slot => {
+                const date = new Date(slot.start_at);
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isTomorrow = date.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+                
+                let dayLabel = '';
+                if (isToday) dayLabel = 'Today';
+                else if (isTomorrow) dayLabel = 'Tomorrow';
+                else dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                
+                const timeLabel = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                
+                return {
+                    datetime: slot.start_at,
+                    display: `${dayLabel} ${timeLabel}`
+                };
+            });
+    }
+
+    createBarberCard(barber, availability) {
+        const card = document.createElement('div');
+        card.className = 'card barber-availability-card';
+        
+        const memberName = `${barber.given_name || ''} ${barber.family_name || ''}`.trim() || 'Team Member';
+        const nextSlots = availability.length > 0 ? availability : [{ display: 'No availability found', datetime: null }];
+        
+        card.innerHTML = `
+            <div class="barber-avatar">${memberName.charAt(0)}</div>
+            <h3>${memberName}</h3>
+            <div class="card-price">$${this.selectedService.basePrice}</div>
+            <div class="available-times">
+                <strong>Next Available:</strong>
+                ${nextSlots.map(slot => `<div class="time-slot ${!slot.datetime ? 'unavailable' : ''}">${slot.display}</div>`).join('')}
+            </div>
+            ${nextSlots[0].datetime 
+                ? `<button class="book-btn" onclick="bookingWidget.selectBarberAndTime('${barber.id}', '${memberName}', '${nextSlots[0].datetime}', '${nextSlots[0].display}')">Book ${nextSlots[0].display}</button>`
+                : '<button class="book-btn" disabled>No slots available</button>'
+            }
+        `;
+        
+        return card;
+    }
+
+    renderDemoBarbers() {
+        const grid = document.getElementById('barbers-grid');
+        
         const demoBarbers = [
             { 
                 id: '1', 
                 name: 'Master Dave', 
                 price: this.selectedService.basePrice + 5, 
-                nextAvailable: '2:00 PM Today',
+                availableSlots: ['Today 2:00 PM', 'Today 4:30 PM', 'Tomorrow 9:00 AM'],
                 specialty: 'Classic & Modern Cuts',
                 rating: '★★★★★',
                 experience: '15+ years'
@@ -188,7 +272,7 @@ class BookingWidget {
                 id: '2', 
                 name: 'James "The Artist"', 
                 price: this.selectedService.basePrice + 10, 
-                nextAvailable: '3:30 PM Today',
+                availableSlots: ['Today 3:30 PM', 'Tomorrow 11:00 AM', 'Tomorrow 2:00 PM'],
                 specialty: 'Creative Styling',
                 rating: '★★★★★',
                 experience: '12+ years'
@@ -197,7 +281,7 @@ class BookingWidget {
                 id: '3', 
                 name: 'Mike Sterling', 
                 price: this.selectedService.basePrice, 
-                nextAvailable: '11:00 AM Tomorrow',
+                availableSlots: ['Tomorrow 11:00 AM', 'Tomorrow 1:30 PM', 'Wed 10:00 AM'],
                 specialty: 'Traditional Barbering',
                 rating: '★★★★☆',
                 experience: '8+ years'
@@ -206,121 +290,34 @@ class BookingWidget {
 
         demoBarbers.forEach(barber => {
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'card barber-availability-card';
             card.innerHTML = `
                 <div class="barber-avatar">${barber.name.charAt(0)}</div>
                 <h3>${barber.name}</h3>
                 <div class="card-price">$${barber.price}</div>
                 <div class="barber-rating">${barber.rating}</div>
-                <div class="card-duration">Next: ${barber.nextAvailable}</div>
-                <div class="card-description">
-                    <strong>${barber.specialty}</strong><br>
-                    ${barber.experience} experience
+                <div class="specialty">${barber.specialty}</div>
+                <div class="available-times">
+                    <strong>Next Available:</strong>
+                    ${barber.availableSlots.map(slot => `<div class="time-slot">${slot}</div>`).join('')}
                 </div>
-            `;
-            card.addEventListener('click', () => this.selectBarber(barber, card));
-            grid.appendChild(card);
-        });
-    }
-
-    async selectBarber(barber, cardElement) {
-        // Remove selected class from all cards
-        document.querySelectorAll('#barbers-grid .card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Add selected class to clicked card
-        cardElement.classList.add('selected');
-        
-        this.selectedBarber = barber;
-        this.showLoading();
-        
-        // Small delay for visual feedback
-        setTimeout(() => {
-            this.currentStep = 3;
-            this.updateProgress();
-            this.showStep('step-times');
-            this.renderBarberInfo();
-            this.renderDateSelector();
-            this.renderTimes();
-        }, 600);
-    }
-
-    renderBarberInfo() {
-        const infoDiv = document.getElementById('selected-barber-info');
-        infoDiv.innerHTML = `
-            <h4>Selected Barber</h4>
-            <p><strong>${this.selectedBarber.name}</strong> - $${this.selectedBarber.price}</p>
-            <p>${this.selectedBarber.specialty} • ${this.selectedBarber.experience} experience</p>
-        `;
-    }
-
-    renderDateSelector() {
-        const dateGrid = document.getElementById('date-options');
-        dateGrid.innerHTML = '';
-
-        // Generate next 7 days
-        const dates = [];
-        for (let i = 0; i < 7; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() + i);
-            dates.push(date);
-        }
-
-        dates.forEach((date, index) => {
-            const dateBtn = document.createElement('div');
-            dateBtn.className = 'date-btn';
-            if (index === 0) {
-                dateBtn.classList.add('active');
-                this.selectedDate = date;
-            }
-            
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-            const dateNum = date.getDate();
-            const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-            
-            dateBtn.innerHTML = `
-                <div class="day">${dayName}</div>
-                <div class="date">${monthName} ${dateNum}</div>
-            `;
-            
-            dateBtn.addEventListener('click', () => {
-                document.querySelectorAll('.date-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                dateBtn.classList.add('active');
-                this.selectedDate = date;
-                this.renderTimes();
-            });
-            
-            dateGrid.appendChild(dateBtn);
-        });
-    }
-
-    renderTimes() {
-        const grid = document.getElementById('times-grid');
-        grid.innerHTML = '';
-
-        const availableTimes = [
-            '9:00 AM', '10:30 AM', '12:00 PM', 
-            '2:00 PM', '3:30 PM', '5:00 PM'
-        ];
-
-        availableTimes.forEach(time => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <h3>${time}</h3>
-                <div class="card-description">Available slot</div>
-                <button class="book-btn" onclick="bookingWidget.bookAppointment('${time}')">
-                    Book This Time
+                <button class="book-btn" onclick="bookingWidget.selectBarberAndTime('${barber.id}', '${barber.name}', null, '${barber.availableSlots[0]}')">
+                    Book ${barber.availableSlots[0]}
                 </button>
             `;
             grid.appendChild(card);
         });
     }
 
-    bookAppointment(time) {
+    selectBarberAndTime(barberId, barberName, datetime, displayTime) {
+        this.selectedBarber = {
+            id: barberId,
+            name: barberName,
+            price: this.selectedService.basePrice
+        };
+        this.selectedTime = displayTime;
+        this.selectedDate = datetime ? new Date(datetime) : new Date();
+
         const dateStr = this.selectedDate.toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
@@ -328,8 +325,7 @@ class BookingWidget {
             day: 'numeric' 
         });
 
-        // Show success modal instead of alert
-        this.showSuccessModal(time, dateStr);
+        this.showSuccessModal(displayTime, dateStr);
     }
 
     showSuccessModal(time, dateStr) {
@@ -392,6 +388,33 @@ function goBackToBarbers() {
     bookingWidget.showStep('step-barbers');
 }
 
+async function goToCheckout() {
+    document.getElementById('success-modal').classList.add('hidden');
+    
+    try {
+        const res = await fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                serviceName: bookingWidget.selectedService.name,
+                barberName: bookingWidget.selectedBarber.name,
+                price: bookingWidget.selectedBarber.price,
+                duration: bookingWidget.selectedService.duration
+            }),
+        });
+
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url; // Redirect to Square checkout
+        } else {
+            alert("Error creating checkout link: " + (data.error || "Unknown error"));
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert("Failed to process checkout");
+    }
+}
+
 // Initialize the booking widget
 const bookingWidget = new BookingWidget();
 
@@ -404,8 +427,4 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = 'https://square.site/book/your-fallback-url';
         });
     }
-
 });
-
-
-
