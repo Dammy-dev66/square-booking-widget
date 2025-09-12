@@ -39,7 +39,7 @@ class BookingWidget {
 
     async loadBarbers() {
         try {
-            const response = await fetch('/api/team-members');
+            const response = await fetch('/api/barbers');
             const data = await response.json();
             this.barbers = data.teamMembers;
         } catch (error) {
@@ -406,5 +406,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
 
 
