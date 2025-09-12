@@ -12,11 +12,11 @@
   "dependencies": {
     "square": "^38.0.0"
   },
-  "scripts": {
+  
   "start": "node server.js",
   "build": "echo 'No build step'",
   "test": "echo \"Error: no test specified\" && exit 1"
-  }
+
   "engines": {
     "node": "22.x"
   }
