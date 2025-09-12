@@ -13,17 +13,19 @@ export default async function handler(req, res) {
         : Environment.Production,
     });
 
+    const { serviceName, barberName, price, duration } = req.body;
+
     const { result } = await client.checkoutApi.createPaymentLink({
       idempotencyKey: Date.now().toString(),
       quickPay: {
-        name: 'Test Service',
+        name: `${serviceName} with ${barberName}`,
         priceMoney: {
-          amount: 2000, // $20.00
+          amount: price * 100, // Convert dollars to cents
           currency: 'USD'
-        },
-        locationId: process.env.SQUARE_LOCATION_ID,
-      }
-    });
+    },
+    locationId: process.env.SQUARE_LOCATION_ID,
+  }
+});
 
     res.status(200).json({ url: result.paymentLink.url });
   } catch (error) {
