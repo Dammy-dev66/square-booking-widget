@@ -392,36 +392,6 @@ function goBackToBarbers() {
     bookingWidget.showStep('step-barbers');
 }
 
-function goToCheckout() {
-    document.getElementById('success-modal').classList.add('hidden');
-    
-    // Call your checkout API
-    fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            serviceName: bookingWidget.selectedService.name,
-            barberName: bookingWidget.selectedBarber.name,
-            price: bookingWidget.selectedBarber.price,
-            duration: bookingWidget.selectedService.duration
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.url) {
-            window.location.href = data.url; // Redirect to Square checkout
-        } else {
-            alert('Checkout error: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Checkout error:', error);
-        alert('Failed to process checkout');
-    });
-}
-
 // Initialize the booking widget
 const bookingWidget = new BookingWidget();
 
@@ -436,4 +406,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
 
