@@ -3,32 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Your Appointment - Premium Booking Experience</title>
+    <title>Book Your Appointment - Silver Fox Barber Co.</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="booking-container">
-        <!-- Progress Bar -->
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
-
-        <!-- Header -->
+        <!-- Header with Branding -->
         <header class="booking-header">
+            <div class="brand-logo">
+                <div class="logo-text">SILVER FOX</div>
+                <div class="logo-subtitle">BARBER CO.</div>
+            </div>
             <div class="booking-header-content">
                 <h1>Book Your Perfect Cut</h1>
-                <p>Experience premium barbering in 3 simple steps</p>
+                <p>Premium barbering experience in 3 simple steps</p>
+            </div>
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-steps">
+                    <div class="progress-step active" id="progress-step-1">
+                        <span>1</span>
+                        <label>Service</label>
+                    </div>
+                    <div class="progress-step" id="progress-step-2">
+                        <span>2</span>
+                        <label>Barber</label>
+                    </div>
+                    <div class="progress-step" id="progress-step-3">
+                        <span>3</span>
+                        <label>Checkout</label>
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- Step 1: Service Selection -->
         <div id="step-services" class="step active">
             <div class="step-header">
-                <div class="step-number">1</div>
                 <h2>Choose Your Service</h2>
                 <p>Select from our premium grooming services</p>
             </div>
-            <div id="services-grid" class="grid">
+            <div id="services-grid" class="services-grid">
                 <!-- Services will be loaded here -->
             </div>
         </div>
@@ -36,94 +53,53 @@
         <!-- Step 2: Barber Selection -->
         <div id="step-barbers" class="step hidden">
             <div class="step-header">
-                <div class="step-number">2</div>
                 <h2>Select Your Master Barber</h2>
                 <p>Each barber brings unique expertise and style</p>
             </div>
             <button class="back-btn" onclick="goBack()">← Back to Services</button>
-            <div id="selected-service-info" class="selected-info"></div>
-            <div id="barbers-grid" class="grid">
+            
+            <div id="selected-service-info" class="selected-info">
+                <!-- Selected service info will be shown here -->
+            </div>
+            
+            <div id="barbers-grid" class="barbers-grid">
                 <!-- Barbers will be loaded here -->
             </div>
         </div>
 
-        <!-- Step 3: Time Selection -->
-        <div id="step-times" class="step hidden">
-            <div class="step-header">
-                <div class="step-number">3</div>
-                <h2>Choose Your Perfect Time</h2>
-                <p>Select from available appointment slots</p>
-            </div>
-            <button class="back-btn" onclick="goBackToBarbers()">← Back to Barbers</button>
-            <div id="selected-barber-info" class="selected-info"></div>
-            <div class="date-selector">
-                <h3>Select Date</h3>
-                <div id="date-options" class="date-grid">
-                    <!-- Date options will be loaded here -->
-                </div>
-            </div>
-            <div id="times-grid" class="grid">
-                <!-- Available times will be loaded here -->
-            </div>
-        </div>
-
         <!-- Loading State -->
-        <div id="loading" class="loading hidden">
+        <div id="loading" class="loading-state hidden">
             <div class="loading-spinner"></div>
-            <p>Preparing your booking experience...</p>
+            <p>Loading your booking options...</p>
         </div>
 
         <!-- Error State -->
-        <div id="error" class="error hidden">
+        <div id="error" class="error-state hidden">
             <div class="error-icon">⚠️</div>
-            <h3>Booking Temporarily Unavailable</h3>
-            <p>We're experiencing technical difficulties. Please try our <a href="#" id="fallback-link">direct booking system</a> or call us directly.</p>
+            <h3>Service Temporarily Unavailable</h3>
+            <p>We're experiencing technical difficulties. Please call us directly at <strong>(925) 555-0123</strong></p>
             <button onclick="location.reload()" class="retry-btn">Try Again</button>
         </div>
 
         <!-- Success Modal -->
         <div id="success-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
             <div class="modal-content">
-                <div class="success-icon">✓</div>
-                <h2>Booking Confirmed!</h2>
-                <div id="booking-summary"></div>
-                <p class="modal-note">You will be redirected to secure checkout to complete your booking.</p>
-                <button onclick="goToCheckout()" class="modal-btn">Continue to Checkout</button>
-
-<script>
-async function goToCheckout() {
-    try {
-        const res = await fetch("/api/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                serviceName: bookingWidget.selectedService.name,
-                barberName: bookingWidget.selectedBarber.name,
-                price: bookingWidget.selectedBarber.price,
-                duration: bookingWidget.selectedService.duration
-            }),
-        });
-
-        const data = await res.json();
-        if (data.url) {
-            window.location.href = data.url; // Redirect to Square checkout
-        } else {
-            alert("Error creating checkout link: " + (data.error || "Unknown error"));
-        }
-    } catch (error) {
-        console.error('Checkout error:', error);
-        alert("Failed to process checkout");
-    }
-}
-</script>
-
+                <div class="modal-header">
+                    <div class="success-icon">✓</div>
+                    <h2>Booking Details Confirmed</h2>
+                </div>
+                <div id="booking-summary" class="booking-summary">
+                    <!-- Booking summary will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <p class="modal-note">Secure checkout powered by Square</p>
+                    <button onclick="goToCheckout()" class="checkout-btn">Continue to Secure Checkout</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
-
 </html>
-
-
