@@ -1,18 +1,22 @@
 {
-  "name": "square-booking-widget",
+  "name": "silver-fox-booking-widget",
   "version": "1.0.0",
-  "description": "Custom Square booking widget with checkout flow",
-  "main": "index.js",
+  "description": "Premium booking widget for Silver Fox Barber Co.",
+  "main": "public/index.html",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo 'Static site - no build required'",
+    "start": "echo 'Deploy to Vercel for production'",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "square": "^38.0.0"
   },
   "engines": {
-    "node": "22.x"
-  }
+    "node": "18.x"
+  },
+  "keywords": ["booking", "barbershop", "square", "appointments"],
+  "author": "Silver Fox Barber Co.",
+  "license": "MIT"
 }
