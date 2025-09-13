@@ -2,7 +2,6 @@ class BookingWidget {
     constructor() {
         this.selectedService = null;
         this.selectedBarber = null;
-        this.selectedDate = null;
         this.selectedTime = null;
         this.services = [];
         this.barbers = [];
@@ -26,6 +25,16 @@ class BookingWidget {
         const progressFill = document.getElementById('progress-fill');
         const width = (this.currentStep / 3) * 100;
         progressFill.style.width = width + '%';
+        
+        // Update progress steps
+        for (let i = 1; i <= 3; i++) {
+            const step = document.getElementById(`progress-step-${i}`);
+            if (i <= this.currentStep) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
+            }
+        }
     }
 
     async loadServices() {
@@ -77,13 +86,13 @@ class BookingWidget {
 
         servicesToRender.forEach(service => {
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'service-card';
             card.innerHTML = `
-                <div class="card-icon">${service.icon}</div>
+                <div class="service-icon">${service.icon}</div>
                 <h3>${service.name}</h3>
-                <div class="card-price">From $${service.basePrice}</div>
-                <div class="card-duration">${service.duration} min</div>
-                <div class="card-description">${service.description}</div>
+                <div class="service-price">$${service.basePrice}</div>
+                <div class="service-duration">${service.duration} minutes</div>
+                <div class="service-description">${service.description}</div>
             `;
             card.addEventListener('click', () => this.selectService(service, card));
             grid.appendChild(card);
@@ -93,20 +102,20 @@ class BookingWidget {
     processApiServices() {
         return this.services.map((service, index) => {
             const price = service.item_data?.variations?.[0]?.item_variation_data?.price_money?.amount / 100 || 25;
-            const icons = ['✂️', '👶', '🧔', '💫', '🪒', '⭐'];
+            const icons = ['✂️', '👦', '🧔', '💫', '🪒', '⭐'];
             const descriptions = [
-                'Classic precision cutting with modern techniques',
-                'Gentle styling perfect for young gentlemen',
-                'Expert beard shaping and grooming',
+                'Precision cutting with traditional techniques',
+                'Gentle styling for young gentlemen',
+                'Expert beard shaping and maintenance',
                 'Complete grooming experience',
-                'Traditional hot towel shave experience',
-                'Premium styling with consultation'
+                'Classic hot towel shave',
+                'Premium styling consultation'
             ];
             
             return {
                 id: service.id,
                 variationId: service.item_data?.variations?.[0]?.id,
-                name: service.item_data?.name || 'Service',
+                name: service.item_data?.name || 'Premium Service',
                 basePrice: price,
                 duration: 30,
                 icon: icons[index % icons.length],
@@ -120,36 +129,36 @@ class BookingWidget {
             { 
                 id: '1', 
                 variationId: '1',
-                name: 'Signature Haircut', 
-                basePrice: 25, 
-                duration: 30,
+                name: 'Gentleman\'s Cut', 
+                basePrice: 45, 
+                duration: 45,
                 icon: '✂️',
-                description: 'Classic precision cutting with modern techniques'
+                description: 'Precision cutting with traditional techniques'
             },
             { 
                 id: '2', 
                 variationId: '2',
-                name: 'Kids Cut', 
-                basePrice: 20, 
-                duration: 25,
-                icon: '👶',
-                description: 'Gentle styling perfect for young gentlemen'
+                name: 'Young Gentleman', 
+                basePrice: 30, 
+                duration: 30,
+                icon: '👦',
+                description: 'Professional styling for ages 12 and under'
             },
             { 
                 id: '3', 
                 variationId: '3',
-                name: 'Beard Trim', 
-                basePrice: 15, 
-                duration: 20,
+                name: 'Beard Sculpting', 
+                basePrice: 25, 
+                duration: 30,
                 icon: '🧔',
-                description: 'Expert beard shaping and grooming'
+                description: 'Expert beard shaping and maintenance'
             },
             { 
                 id: '4', 
                 variationId: '4',
-                name: 'Haircut + Beard', 
-                basePrice: 35, 
-                duration: 45,
+                name: 'The Full Service', 
+                basePrice: 65, 
+                duration: 60,
                 icon: '💫',
                 description: 'Complete grooming experience'
             }
@@ -157,11 +166,14 @@ class BookingWidget {
     }
 
     async selectService(service, cardElement) {
-        document.querySelectorAll('#services-grid .card').forEach(card => {
+        // Remove selected class from all cards
+        document.querySelectorAll('.service-card').forEach(card => {
             card.classList.remove('selected');
         });
         
+        // Add selected class to clicked card
         cardElement.classList.add('selected');
+        
         this.selectedService = service;
         this.showLoading();
         
@@ -177,15 +189,15 @@ class BookingWidget {
             } catch (error) {
                 this.showError();
             }
-        }, 600);
+        }, 800);
     }
 
     renderServiceInfo() {
         const infoDiv = document.getElementById('selected-service-info');
         infoDiv.innerHTML = `
             <h4>Selected Service</h4>
-            <p><strong>${this.selectedService.name}</strong> - $${this.selectedService.basePrice} (${this.selectedService.duration} min)</p>
-            <p>${this.selectedService.description}</p>
+            <p><strong>${this.selectedService.name}</strong> - ${this.selectedService.basePrice} <span style="color: var(--text-muted);">(${this.selectedService.duration} min)</span></p>
+            <p style="margin-top: 0.5rem; color: var(--text-secondary);">${this.selectedService.description}</p>
         `;
     }
 
@@ -233,22 +245,22 @@ class BookingWidget {
 
     createBarberCard(barber, availability) {
         const card = document.createElement('div');
-        card.className = 'card barber-availability-card';
+        card.className = 'barber-card';
         
-        const memberName = `${barber.given_name || ''} ${barber.family_name || ''}`.trim() || 'Team Member';
-        const nextSlots = availability.length > 0 ? availability : [{ display: 'No availability found', datetime: null }];
+        const memberName = `${barber.given_name || ''} ${barber.family_name || ''}`.trim() || 'Master Barber';
+        const nextSlots = availability.length > 0 ? availability : [{ display: 'Call to schedule', datetime: null }];
         
         card.innerHTML = `
             <div class="barber-avatar">${memberName.charAt(0)}</div>
             <h3>${memberName}</h3>
-            <div class="card-price">$${this.selectedService.basePrice}</div>
+            <div class="barber-price">${this.selectedService.basePrice}</div>
             <div class="available-times">
                 <strong>Next Available:</strong>
                 ${nextSlots.map(slot => `<div class="time-slot ${!slot.datetime ? 'unavailable' : ''}">${slot.display}</div>`).join('')}
             </div>
             ${nextSlots[0].datetime 
                 ? `<button class="book-btn" onclick="bookingWidget.selectBarberAndTime('${barber.id}', '${memberName}', '${nextSlots[0].datetime}', '${nextSlots[0].display}')">Book ${nextSlots[0].display}</button>`
-                : '<button class="book-btn" disabled>No slots available</button>'
+                : '<button class="book-btn" onclick="bookingWidget.callToSchedule()">Call to Schedule</button>'
             }
         `;
         
@@ -260,43 +272,40 @@ class BookingWidget {
         
         const demoBarbers = [
             { 
-                id: '1', 
-                name: 'Master Dave', 
-                price: this.selectedService.basePrice + 5, 
-                availableSlots: ['Today 2:00 PM', 'Today 4:30 PM', 'Tomorrow 9:00 AM'],
-                specialty: 'Classic & Modern Cuts',
-                rating: '★★★★★',
-                experience: '15+ years'
-            },
-            { 
-                id: '2', 
-                name: 'James "The Artist"', 
-                price: this.selectedService.basePrice + 10, 
-                availableSlots: ['Today 3:30 PM', 'Tomorrow 11:00 AM', 'Tomorrow 2:00 PM'],
-                specialty: 'Creative Styling',
-                rating: '★★★★★',
-                experience: '12+ years'
-            },
-            { 
-                id: '3', 
-                name: 'Mike Sterling', 
+                id: 'james', 
+                name: 'James', 
                 price: this.selectedService.basePrice, 
-                availableSlots: ['Tomorrow 11:00 AM', 'Tomorrow 1:30 PM', 'Wed 10:00 AM'],
+                availableSlots: ['Today 2:00 PM', 'Today 4:30 PM', 'Tomorrow 10:00 AM'],
+                specialty: 'Classic & Modern Cuts',
+                rating: '★★★★★'
+            },
+            { 
+                id: 'dave', 
+                name: 'Dave', 
+                price: this.selectedService.basePrice, 
+                availableSlots: ['Today 3:30 PM', 'Tomorrow 9:00 AM', 'Tomorrow 2:00 PM'],
+                specialty: 'Precision Fades',
+                rating: '★★★★★'
+            },
+            { 
+                id: 'ray', 
+                name: 'Ray', 
+                price: this.selectedService.basePrice, 
+                availableSlots: ['Tomorrow 11:00 AM', 'Tomorrow 1:30 PM', 'Wednesday 10:00 AM'],
                 specialty: 'Traditional Barbering',
-                rating: '★★★★☆',
-                experience: '8+ years'
+                rating: '★★★★★'
             }
         ];
 
         demoBarbers.forEach(barber => {
             const card = document.createElement('div');
-            card.className = 'card barber-availability-card';
+            card.className = 'barber-card';
             card.innerHTML = `
                 <div class="barber-avatar">${barber.name.charAt(0)}</div>
                 <h3>${barber.name}</h3>
-                <div class="card-price">$${barber.price}</div>
+                <div class="barber-price">${barber.price}</div>
                 <div class="barber-rating">${barber.rating}</div>
-                <div class="specialty">${barber.specialty}</div>
+                <div class="barber-specialty">${barber.specialty}</div>
                 <div class="available-times">
                     <strong>Next Available:</strong>
                     ${barber.availableSlots.map(slot => `<div class="time-slot">${slot}</div>`).join('')}
@@ -328,31 +337,33 @@ class BookingWidget {
         this.showSuccessModal(displayTime, dateStr);
     }
 
+    callToSchedule() {
+        window.open('tel:+19255550123', '_self');
+    }
+
     showSuccessModal(time, dateStr) {
         const modal = document.getElementById('success-modal');
         const summary = document.getElementById('booking-summary');
         
         summary.innerHTML = `
-            <div style="text-align: left; margin: 1.5rem 0;">
-                <p><strong>Service:</strong> ${this.selectedService.name}</p>
-                <p><strong>Barber:</strong> ${this.selectedBarber.name}</p>
-                <p><strong>Date:</strong> ${dateStr}</p>
-                <p><strong>Time:</strong> ${time}</p>
-                <p><strong>Duration:</strong> ${this.selectedService.duration} minutes</p>
-                <p><strong>Total:</strong> $${this.selectedBarber.price}</p>
-            </div>
+            <p><strong>Service:</strong> <span>${this.selectedService.name}</span></p>
+            <p><strong>Barber:</strong> <span>${this.selectedBarber.name}</span></p>
+            <p><strong>Date:</strong> <span>${dateStr}</span></p>
+            <p><strong>Time:</strong> <span>${time}</span></p>
+            <p><strong>Duration:</strong> <span>${this.selectedService.duration} minutes</span></p>
+            <p class="total"><strong>Total:</strong> <span>${this.selectedBarber.price}</span></p>
         `;
         
+        this.currentStep = 3;
+        this.updateProgress();
         modal.classList.remove('hidden');
     }
 
     showStep(stepId) {
         document.querySelectorAll('.step').forEach(step => {
             step.classList.add('hidden');
-            step.classList.remove('active');
         });
         document.getElementById(stepId).classList.remove('hidden');
-        document.getElementById(stepId).classList.add('active');
         this.hideLoading();
         this.hideError();
     }
@@ -382,14 +393,11 @@ function goBack() {
     bookingWidget.showStep('step-services');
 }
 
-function goBackToBarbers() {
-    bookingWidget.currentStep = 2;
-    bookingWidget.updateProgress();
-    bookingWidget.showStep('step-barbers');
-}
-
 async function goToCheckout() {
     document.getElementById('success-modal').classList.add('hidden');
+    
+    // Show loading state
+    document.getElementById('loading').classList.remove('hidden');
     
     try {
         const res = await fetch("/api/checkout", {
@@ -407,24 +415,21 @@ async function goToCheckout() {
         if (data.url) {
             window.location.href = data.url; // Redirect to Square checkout
         } else {
-            alert("Error creating checkout link: " + (data.error || "Unknown error"));
+            document.getElementById('loading').classList.add('hidden');
+            alert("Unable to process checkout. Please call us at (925) 555-0123 to book your appointment.");
         }
     } catch (error) {
         console.error('Checkout error:', error);
-        alert("Failed to process checkout");
+        document.getElementById('loading').classList.add('hidden');
+        alert("Connection error. Please call us at (925) 555-0123 to complete your booking.");
     }
 }
 
 // Initialize the booking widget
 const bookingWidget = new BookingWidget();
 
-// Set up fallback link
+// Handle page load
 document.addEventListener('DOMContentLoaded', function() {
-    const fallbackLink = document.getElementById('fallback-link');
-    if (fallbackLink) {
-        fallbackLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'https://square.site/book/your-fallback-url';
-        });
-    }
+    // Any additional initialization can go here
+    console.log('Silver Fox Booking Widget loaded');
 });
