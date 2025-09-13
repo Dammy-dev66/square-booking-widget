@@ -21,20 +21,44 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Square Team Members API Error:', data);
       throw new Error(data.errors?.[0]?.detail || 'Square API error');
     }
 
-    res.status(200).json({ teamMembers: data.team_members || [] });
+    const activeMembers = (data.team_members || []).filter(member => 
+      member.status === 'ACTIVE' && 
+      (member.given_name || member.family_name)
+    );
+
+    res.status(200).json({ teamMembers: activeMembers });
   } catch (err) {
-    console.error("Error fetching team members", err);
+    console.error("Error fetching team members from Square:", err);
     
-    // Fallback demo data
-    const demoTeamMembers = [
-      { id: '1', given_name: 'Dave', family_name: 'Smith', status: 'ACTIVE' },
-      { id: '2', given_name: 'James', family_name: 'Johnson', status: 'ACTIVE' },
-      { id: '3', given_name: 'Mike', family_name: 'Wilson', status: 'ACTIVE' }
+    // Fallback to demo team members matching Silver Fox staff
+    const fallbackTeamMembers = [
+      { 
+        id: 'demo-james', 
+        given_name: 'James', 
+        family_name: '', 
+        status: 'ACTIVE',
+        email_address: 'james@silverfoxbarberco.com'
+      },
+      { 
+        id: 'demo-dave', 
+        given_name: 'Dave', 
+        family_name: '', 
+        status: 'ACTIVE',
+        email_address: 'dave@silverfoxbarberco.com'
+      },
+      { 
+        id: 'demo-ray', 
+        given_name: 'Ray', 
+        family_name: '', 
+        status: 'ACTIVE',
+        email_address: 'ray@silverfoxbarberco.com'
+      }
     ];
     
-    res.status(200).json({ teamMembers: demoTeamMembers });
+    res.status(200).json({ teamMembers: fallbackTeamMembers });
   }
 }
