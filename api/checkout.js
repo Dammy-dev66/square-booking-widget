@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const { serviceName, barberName, price, duration } = req.body;
 
     if (!serviceName || !barberName || !price) {
-      return res.status(400).json({ error: 'Missing required booking data' });
+      return res.status(400).json({ error: 'Missing required booking information' });
     }
 
     const client = new Client({
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     });
 
     const { result } = await client.checkoutApi.createPaymentLink({
-      idempotencyKey: Date.now().toString(),
+      idempotencyKey: `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       quickPay: {
         name: `${serviceName} with ${barberName}`,
         priceMoney: {
@@ -28,12 +28,18 @@ export default async function handler(req, res) {
           currency: 'USD'
         },
         locationId: process.env.SQUARE_LOCATION_ID,
+      },
+      checkoutOptions: {
+        redirectUrl: process.env.REDIRECT_URL || 'https://silverfoxbarberco.com/booking-confirmed'
       }
     });
 
     res.status(200).json({ url: result.paymentLink.url });
   } catch (error) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Checkout creation error:', error);
+    res.status(500).json({ 
+      error: 'Unable to create checkout session',
+      details: error.message 
+    });
   }
 }
