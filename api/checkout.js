@@ -16,29 +16,55 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { serviceName, barberName, price } = req.body;
+    const { serviceName, barberName, price, currency = "USD" } = req.body || {};
 
-    if (!serviceName || !barberName || !price) {
-      return res.status(400).json({ error: "Missing checkout details" });
+    if (!serviceName || !barberName || (price === undefined || price === null)) {
+      return res.status(400).json({ error: "Missing required fields: serviceName, barberName, price" });
     }
 
-    const checkoutResponse = await client.checkoutApi.createPaymentLink({
-      idempotencyKey: crypto.randomUUID(),
+    if (!process.env.SQUARE_LOCATION_ID) {
+      console.error("Missing SQUARE_LOCATION_ID");
+      return res.status(500).json({ error: "Server misconfiguration" });
+    }
+
+    const numericPrice = Number(price);
+    if (Number.isNaN(numericPrice)) {
+      return res.status(400).json({ error: "Price must be a number" });
+    }
+
+    const amountCents = Math.round(numericPrice * 100);
+    const idempotencyKey =
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    const payload = {
+      idempotencyKey,
       quickPay: {
         name: `${serviceName} with ${barberName}`,
         priceMoney: {
-          amount: parseInt(price * 100), // convert dollars to cents
-          currency: "USD",
+          amount: amountCents,
+          currency,
         },
         locationId: process.env.SQUARE_LOCATION_ID,
       },
-    });
+    };
 
-    return res
-      .status(200)
-      .json({ url: checkoutResponse.result.paymentLink.url });
+    const checkoutResponse = await client.checkoutApi.createPaymentLink(payload);
+
+    // Be defensive about the response shape (SDK sometimes maps snake_case -> camelCase)
+    const url =
+      checkoutResponse?.result?.paymentLink?.url ||
+      checkoutResponse?.result?.payment_link?.url;
+
+    if (!url) {
+      console.error("createPaymentLink returned unexpected response:", checkoutResponse);
+      return res.status(500).json({ error: "Failed to create checkout link" });
+    }
+
+    return res.status(200).json({ url });
   } catch (error) {
-    console.error("Checkout API error:", error);
+    console.error("Checkout API error:", error?.response || error);
     return res.status(500).json({ error: "Failed to create checkout link" });
   }
 }
