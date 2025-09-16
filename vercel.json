@@ -1,22 +1,10 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    }
+    { "src": "public/**/*", "use": "@vercel/static" },
+    { "src": "api/**/*.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/api/services", "dest": "/api/services.js" },
-    { "src": "/api/team-members", "dest": "/api/team-members.js" },
-    { "src": "/api/availability", "dest": "/api/availability.js" },
-    { "src": "/api/checkout", "dest": "/api/checkout.js" },
-    { "src": "/api/hello", "dest": "/api/hello.js" },
-
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
