@@ -39,7 +39,7 @@ class BookingWidget {
 
     async loadServices() {
         try {
-            const response = await fetch('/api/services');
+            const response = await fetch('https://backend-ymlj.vercel.app/api/services');
             const data = await response.json();
             this.services = data.services;
         } catch (error) {
@@ -50,7 +50,7 @@ class BookingWidget {
 
     async loadBarbers() {
         try {
-            const response = await fetch('/api/team-members');
+            const response = await fetch('https://backend-ymlj.vercel.app/api/team-members');
             const data = await response.json();
             this.barbers = data.teamMembers;
         } catch (error) {
@@ -61,7 +61,7 @@ class BookingWidget {
 
     async loadAvailability(serviceVariationId = null) {
         try {
-            const response = await fetch('/api/availability', {
+            const response = await fetch('https://backend-ymlj.vercel.app/api/availability', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -400,7 +400,7 @@ async function goToCheckout() {
     document.getElementById('loading').classList.remove('hidden');
     
     try {
-        const res = await fetch("/api/checkout", {
+        const res = await fetch("https://backend-ymlj.vercel.app/api/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -433,3 +433,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Any additional initialization can go here
     console.log('Silver Fox Booking Widget loaded');
 });
+
