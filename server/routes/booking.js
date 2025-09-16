@@ -2,7 +2,10 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-const SQUARE_BASE_URL = 'https://connect.squareupsandbox.com/v2';
+const SQUARE_BASE_URL =  
+    process.env.SQUARE_ENVIRONMENT === "production"
+    ? "https://connect.squareup.com/v2"
+    : "https://connect.squareupsandbox.com/v2";
 const ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 
 const squareHeaders = {
@@ -131,5 +134,6 @@ router.post('/availability', async (req, res) => {
         res.status(500).json({ error: 'Failed to search availability' });
     }
 });
+
 
 module.exports = router;
