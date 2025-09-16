@@ -36,7 +36,6 @@ class BookingWidget {
         }
     }
 
-    // ✅ FIX: relative API path
     async loadServices() {
         try {
             const response = await fetch('/api/services');
@@ -48,7 +47,6 @@ class BookingWidget {
         }
     }
 
-    // ✅ FIX: relative API path
     async loadBarbers() {
         try {
             const response = await fetch('/api/team-members');
@@ -60,7 +58,6 @@ class BookingWidget {
         }
     }
 
-    // ✅ FIX: relative API path
     async loadAvailability(serviceVariationId = null) {
         try {
             const response = await fetch('/api/availability', {
@@ -128,7 +125,7 @@ class BookingWidget {
 
     getDemoServices() {
         return [
-            { id: '1', variationId: '1', name: "Gentleman's Cut", basePrice: 45, duration: 45, icon: '✂️', description: 'Precision cutting with traditional techniques' },
+            { id: '1', variationId: '1', name: 'Gentleman\'s Cut', basePrice: 45, duration: 45, icon: '✂️', description: 'Precision cutting with traditional techniques' },
             { id: '2', variationId: '2', name: 'Young Gentleman', basePrice: 30, duration: 30, icon: '👦', description: 'Professional styling for ages 12 and under' },
             { id: '3', variationId: '3', name: 'Beard Sculpting', basePrice: 25, duration: 30, icon: '🧔', description: 'Expert beard shaping and maintenance' },
             { id: '4', variationId: '4', name: 'The Full Service', basePrice: 65, duration: 60, icon: '💫', description: 'Complete grooming experience' }
@@ -136,11 +133,9 @@ class BookingWidget {
     }
 
     async selectService(service, cardElement) {
-        document.querySelectorAll('.service-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
+        document.querySelectorAll('.service-card').forEach(card => card.classList.remove('selected'));
         cardElement.classList.add('selected');
+        
         this.selectedService = service;
         this.showLoading();
         
@@ -163,7 +158,7 @@ class BookingWidget {
         const infoDiv = document.getElementById('selected-service-info');
         infoDiv.innerHTML = `
             <h4>Selected Service</h4>
-            <p><strong>${this.selectedService.name}</strong> - $${this.selectedService.basePrice} <span style="color: var(--text-muted);">(${this.selectedService.duration} min)</span></p>
+            <p><strong>${this.selectedService.name}</strong> - ${this.selectedService.basePrice} <span style="color: var(--text-muted);">(${this.selectedService.duration} min)</span></p>
             <p style="margin-top: 0.5rem; color: var(--text-secondary);">${this.selectedService.description}</p>
         `;
     }
@@ -220,7 +215,7 @@ class BookingWidget {
         card.innerHTML = `
             <div class="barber-avatar">${memberName.charAt(0)}</div>
             <h3>${memberName}</h3>
-            <div class="barber-price">$${this.selectedService.basePrice}</div>
+            <div class="barber-price">${this.selectedService.basePrice}</div>
             <div class="available-times">
                 <strong>Next Available:</strong>
                 ${nextSlots.map(slot => `<div class="time-slot ${!slot.datetime ? 'unavailable' : ''}">${slot.display}</div>`).join('')}
@@ -249,7 +244,7 @@ class BookingWidget {
             card.innerHTML = `
                 <div class="barber-avatar">${barber.name.charAt(0)}</div>
                 <h3>${barber.name}</h3>
-                <div class="barber-price">$${barber.price}</div>
+                <div class="barber-price">${barber.price}</div>
                 <div class="barber-rating">${barber.rating}</div>
                 <div class="barber-specialty">${barber.specialty}</div>
                 <div class="available-times">
@@ -270,7 +265,6 @@ class BookingWidget {
         this.selectedDate = datetime ? new Date(datetime) : new Date();
 
         const dateStr = this.selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
         this.showSuccessModal(displayTime, dateStr);
     }
 
@@ -288,7 +282,7 @@ class BookingWidget {
             <p><strong>Date:</strong> <span>${dateStr}</span></p>
             <p><strong>Time:</strong> <span>${time}</span></p>
             <p><strong>Duration:</strong> <span>${this.selectedService.duration} minutes</span></p>
-            <p class="total"><strong>Total:</strong> <span>$${this.selectedBarber.price}</span></p>
+            <p class="total"><strong>Total:</strong> <span>${this.selectedBarber.price}</span></p>
         `;
         
         this.currentStep = 3;
@@ -297,9 +291,7 @@ class BookingWidget {
     }
 
     showStep(stepId) {
-        document.querySelectorAll('.step').forEach(step => {
-            step.classList.add('hidden');
-        });
+        document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
         document.getElementById(stepId).classList.remove('hidden');
         this.hideLoading();
         this.hideError();
@@ -330,7 +322,6 @@ function goBack() {
     bookingWidget.showStep('step-services');
 }
 
-// ✅ FIX: relative API path
 async function goToCheckout() {
     document.getElementById('success-modal').classList.add('hidden');
     document.getElementById('loading').classList.remove('hidden');
@@ -352,16 +343,15 @@ async function goToCheckout() {
             window.location.href = data.url;
         } else {
             document.getElementById('loading').classList.add('hidden');
-            alert("Unable to process checkout. Please call us at (925) 555-0123.");
+            alert("Unable to process checkout. Please call us at (925) 555-0123 to book your appointment.");
         }
     } catch (error) {
         console.error('Checkout error:', error);
         document.getElementById('loading').classList.add('hidden');
-        alert("Connection error. Please call us at (925) 555-0123.");
+        alert("Connection error. Please call us at (925) 555-0123 to complete your booking.");
     }
 }
 
-// Init
 const bookingWidget = new BookingWidget();
 
 document.addEventListener('DOMContentLoaded', function() {
