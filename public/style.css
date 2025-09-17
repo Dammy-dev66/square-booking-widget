@@ -37,6 +37,11 @@ body {
     overflow-x: hidden;
 }
 
+/* 🔧 Utility classes */
+.hidden {
+    display: none !important;
+}
+
 /* Header Styling */
 .booking-header {
     background: var(--darker-bg);
@@ -686,5 +691,10 @@ body {
         width: 60px;
         height: 60px;
         font-size: 1.5rem;
+    }
+
+    /* 🔧 Reduce empty space for smaller devices */
+    .step {
+        min-height: 400px;
     }
 }
