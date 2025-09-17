@@ -5,7 +5,7 @@ import crypto from "crypto";
 const client = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment:
-    process.env.SQUARE_ENVIRONMENT === "production"
+    process.env.SQUARE_ENVIRONMENT?.toLowerCase() === "production"
       ? Environment.Production
       : Environment.Sandbox,
 });
@@ -18,8 +18,10 @@ export default async function handler(req, res) {
   try {
     const { serviceName, barberName, price, currency = "USD" } = req.body || {};
 
-    if (!serviceName || !barberName || (price === undefined || price === null)) {
-      return res.status(400).json({ error: "Missing required fields: serviceName, barberName, price" });
+    if (!serviceName || !barberName || price == null) {
+      return res
+        .status(400)
+        .json({ error: "Missing required fields: serviceName, barberName, price" });
     }
 
     if (!process.env.SQUARE_LOCATION_ID) {
@@ -39,20 +41,24 @@ export default async function handler(req, res) {
         : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
     const payload = {
-      idempotencyKey,
-      quickPay: {
+      idempotency_key: idempotencyKey,
+      quick_pay: {
         name: `${serviceName} with ${barberName}`,
-        priceMoney: {
+        price_money: {
           amount: amountCents,
           currency,
         },
-        locationId: process.env.SQUARE_LOCATION_ID,
+        location_id: process.env.SQUARE_LOCATION_ID,
       },
     };
 
     const checkoutResponse = await client.checkoutApi.createPaymentLink(payload);
 
-    // Be defensive about the response shape (SDK sometimes maps snake_case -> camelCase)
+    if (checkoutResponse?.errors) {
+      console.error("Square API returned errors:", checkoutResponse.errors);
+      return res.status(500).json({ error: "Square API error", details: checkoutResponse.errors });
+    }
+
     const url =
       checkoutResponse?.result?.paymentLink?.url ||
       checkoutResponse?.result?.payment_link?.url;
@@ -64,7 +70,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ url });
   } catch (error) {
-    console.error("Checkout API error:", error?.response || error);
+    console.error("Checkout API error:", error?.errors || error?.response || error);
     return res.status(500).json({ error: "Failed to create checkout link" });
   }
 }
