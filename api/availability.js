@@ -4,7 +4,7 @@ import { Client, Environment } from "square";
 const client = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
   environment:
-    process.env.SQUARE_ENVIRONMENT === "production"
+    process.env.SQUARE_ENVIRONMENT?.toLowerCase() === "production"
       ? Environment.Production
       : Environment.Sandbox,
 });
@@ -18,7 +18,9 @@ export default async function handler(req, res) {
     const { serviceVariationId, startAt, endAt } = req.body || {};
 
     if (!serviceVariationId) {
-      return res.status(400).json({ error: "Missing required field: serviceVariationId" });
+      return res
+        .status(400)
+        .json({ error: "Missing required field: serviceVariationId" });
     }
 
     if (!process.env.SQUARE_LOCATION_ID) {
@@ -26,30 +28,32 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server misconfiguration" });
     }
 
-    // Build the body for the Bookings API searchAvailability call
+    // Build request body for Availability API
     const body = {
       query: {
         filter: {
-          serviceVariationId,
-          locationId: process.env.SQUARE_LOCATION_ID,
-        }
-      }
+          service_variation_id: serviceVariationId,
+          location_id: process.env.SQUARE_LOCATION_ID,
+        },
+      },
     };
 
-    // optional: add a range if provided (ISO timestamps expected)
     if (startAt || endAt) {
-      body.query.range = {};
-      if (startAt) body.query.range.startAt = startAt;
-      if (endAt) body.query.range.endAt = endAt;
+      body.query.filter.start_at = startAt;
+      body.query.filter.end_at = endAt;
     }
 
-    const resp = await client.bookingsApi.searchAvailability(body);
-    const availability = resp?.result?.availabilities || [];
+    const resp = await client.availabilityApi.searchAvailability(body);
 
+    if (resp?.errors) {
+      console.error("Square API returned errors:", resp.errors);
+      return res.status(500).json({ error: "Square API error", details: resp.errors });
+    }
+
+    const availability = resp?.result?.availabilities || [];
     return res.status(200).json({ availability });
   } catch (error) {
-    console.error("Availability API error:", error);
-    // Keep response structure predictable for the frontend
+    console.error("Availability API error:", error?.errors || error?.response || error);
     return res.status(500).json({ error: "Failed to load availability" });
   }
 }
